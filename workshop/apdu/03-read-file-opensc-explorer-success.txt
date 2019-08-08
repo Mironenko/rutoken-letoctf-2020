@@ -1,0 +1,5 @@
+cd 1000
+cd 1004
+cat AAAA
+verify CHV2 3132333435363738
+cat AAAA

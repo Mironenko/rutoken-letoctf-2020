@@ -1,0 +1,2 @@
+echo 'LetoCTF school rulez' > secret.txt
+pkcs11-tool --module /usr/lib/librtpkcs11ecp.so --write-object secret.txt --type data --private --label 'secret' --login --pin 12345678

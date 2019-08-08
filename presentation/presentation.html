@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>LetoCTF 2020 - Aktiv Rutoken - Smartcards</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <style type="text/css">
+      @import url(fonts/YanoneKaffeesatz.css);
+      @import url(fonts/DroidSerif.css);
+      @import url(fonts/PTMono.css);
+
+      body { font-family: 'Droid Serif'; }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+        padding: 0px;
+        margin: 10px;
+      }
+      h4, h5 {
+        font-family: 'Yanone Kaffeesatz';
+        margin: -.1em 0; }
+      .remark-slide-content {
+      	background-image: url("img2020/bg.png");
+      	background-size: 100%;
+      	background-position: top;
+      }
+      .remark-code-line, .remark-code, .remark-inline-code {
+        font-family: 'PT Mono';
+        background-color: rgb(240, 240, 250);
+      }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# Зачем мне нужен 
+# криптографический токен? 
+### Повышаем безопасность 
+### при помощи токена на примере ОС Linux.
+
+#### АО "Актив-Софт"
+#### Мироненко Евгений
+
+---
+
+# Agenda
+
+<!-- CCID crypto CTF forensics hardware ICC PC/CS PKCS#11 reader security smartcard token USB OpenSSL signature SSH PAM Authentication IFDHandler APDU Linux -->
+
+<img src=img2020/00-wordcloud.png style="width:60%" align=right />
+
+#### Теория
+  - аутентификация, термины
+  - факторы аутентификации
+  - использование криптографии
+  - PKI
+
+
+#### Криптографический токен
+  - многообразие
+  - архитектура
+  - стандарты и интерфейсы
+  - APDU
+  - PKCS#11
+
+
+#### ПО поддержки смарт-карт
+  - обзор
+  - использование
+
+
+#### Применение в Linux
+  - использование в web-приложении
+  - локальная аутентификация
+  - аутентификация в SSH
+  - аутентификация в TLS-соединении
+
+
+---
+
+# Аутентификация
+
+### Аутентификация -- проверка идентификации сущности
+
+![:scale 100%](img2020/01-authentication-parts.png)
+
+---
+
+# Факторы аутентификации
+
+
+<table height=70%>
+
+  <tr>
+    <td width=33%><img src=img2020/02-knowing-secret.png style="width:100%" align=right /></td>
+    <td width=33%><img src=img2020/02-posessing.png style="width:100%" align=right /></td>
+    <td width=33%><img src=img2020/02-being.png style="width:100%" align=right /></td>
+  </tr>
+  <tr height=30%>
+    <td width=33%><h3>Знание секрета</h3></td>
+    <td width=33%><h3>Владение артефактом</h3></td>
+    <td width=33%><h3>Обладание уникальной характеристикой</h3></td>
+  </tr>
+</table>
+
+<br>
+### Несколько факторов повышают безопасность
+
+---
+
+# Чему мы доверяем?
+
+<table height=60%>
+  <tr>
+    <td rowspan=2>
+      <h3>* Передача неизменных аутентификаторов?</h3><br>
+      <h3>* Хранение эталонов в базе данных?</h3><br>
+      <h3>* Частые утечки?</h3>
+    </td>
+    <td><img src=img2020/03-trust-password.png style="width:70%" align=right /></td>
+  </tr>
+  <tr>
+    <td><img src=img2020/03-trust-biometry.png style="width:70%" align=right /></td>
+  </tr>
+</table>
+
+<br/>
+
+### Как в цифровом мире подтверждать фактор владения?
+
+---
+
+# Аутентификация криптографией
+
+<img src=img2020/04-asym-crypto.png style="width:110%" align=center />
+
+---
+
+# Цифровая подпись
+
+<table height=60%>
+  <tr>
+    <td bgcolor=#F0F0F0>
+      <h4>Выполнение подписи</h4>
+      <img src=img2020/05-sign.png style="width:100%" align=left /><br/>
+    </td>
+    <td rowspan=2 valign=top align=right>
+      <h3>Аутентификация</h3>
+      <img src=img2020/05-authenticate.png style="width:90%" align=right />
+    </td>
+  </tr>
+  <tr>
+    <td bgcolor=#F0F0F0>
+      <h4>Проверка подписи</h4>
+      <img src=img2020/05-verify.png style="width:100%" align=left />
+    </td>
+  </tr>
+  <tr bgcolor=#E0E0E0>
+    <td >
+      <h4><sup>*</sup>Хеш</h4>
+      H: {0, 1}<sup>*</sup> -> {0, 1}<sup>n</sup><br/>
+    </td>
+    <td>
+      <img src=img2020/05-1-dgst.png style="width:60%" align=left />
+      <img src=img2020/05-2-dgst.png style="width:60%" align=left />
+    </td>
+  </tr>
+  <tr bgcolor=#E0E0E0>
+    <td>
+      - По образу трудно найти прообраз
+    </td>
+    <td>
+      <img src=img2020/05-3-dgst.png style="width:60%" align=left />
+    </td>
+  </tr>
+  <tr bgcolor=#E0E0E0>
+    <td>
+      - Трудно найти второй прообраз
+    </td>
+    <td>
+      <img src=img2020/05-4-dgst.png style="width:60%" align=left />
+    </td>
+  </tr>
+  </tr>
+  <tr bgcolor=#E0E0E0>
+    <td>
+      - Трудно сгенерировать два прообраза с одинаковым образом
+    </td>
+    <td>
+      <img src=img2020/05-5-dgst.png style="width:60%" align=left />
+    </td>
+  </tr>
+</table>
+
+---
+
+# Транзитивное доверие
+
+<img src=img2020/24-transitivity.png style="width:100%" align=right />
+
+
+---
+
+# PKI
+
+<img src=img2020/06-pki.png style="width:100%" align=right />
+
+
+---
+
+# О ключах и людях
+
+
+<table height=60%>
+  <tr>
+    <td width=30%>
+<h3>Прокачивать арифметику?</h3>
+<br/>
+<h3>Рисковать при вычислении?</h3>
+<br/>
+<h3>Рисковать при хранении?</h3>
+    </td>
+    <td>
+      <img src=img2020/07-store-key.png style="width:80%" align=right />
+    </td>
+  </tr>
+</table>
+
+
+---
+
+# Криптографический токен
+
+<img src=img2020/08-token.png style="width:100%" align=right />
+
+---
+
+# Многообразие
+
+<img src=img2020/09-forms.png style="width:100%" align=right />
+
+---
+
+# Аппаратная архитектура
+
+<table height=70% border=5>
+  <tr>
+    <td width=30%><h3>CPU</h3></td>
+    <td width=30%><h3>ПЗУ</h3></td>
+    <td width=30%><h3>ОЗУ</h3></td>
+  </tr>
+  <tr>
+    <td width=30%><h3>EEPROM</h3></td>
+    <td width=30%><h3>Криптографический сопроцессор</h3></td>
+    <td width=30%><h3>ГСЧ</h3></td>
+  </tr>
+  <tr>
+    <td width=30%><h3>Интерфейс ввода/вывода</h3></td>
+    <td width=30%><h3>Таймер</h3></td>
+    <td width=30%><h3>Аппаратные методы защиты</h3></td>
+  </tr>
+</table>
+
+---
+
+# Программная архитектура смарт-карты
+
+<img src=img2020/14-smartcard-program-arch.png style="width:100%" align=right />
+
+---
+
+# Интерфейсы и спецификации
+
+<table width=90% border=1>
+  <tr>
+    <td rowspan=4><img src=img2020/12-pcsc.png style="width:100%" align=right /></td>
+    <td width=30% height=40%><h3>ISO7816 4-15</h3></td>
+  </tr>
+  <tr>
+    <td width=30% height=40%><h3>PC/CS</h3></td>
+  </tr>
+  <tr>
+    <td width=30%><h3>USB CCID</h3></td>
+  </tr>
+  <tr>
+    <td width=30%><h3>ISO7816 1-3</h3></td>
+  </tr>
+</table>
+
+---
+
+# PC/SC API
+
+### Управление подключением считывателей/смарт-карт
+* `SCardListReaders`
+* `SCardGetStatusChange`
+### Взаимодействие со считывателем смарт-карт
+* `SCardConnect` / `SCardDisconnect`
+* `SCardGetAttrib` / `SCardSetAttrib`
+* `SCardControl`
+* `SCardStatus`
+### Взаимодействие с одной смарт-картой
+* `SCardBeginTransaction` / `SCardEndTransaction`
+* `SCardTransmit`
+
+---
+
+# APDU-команды
+
+<img src=img2020/11-apdu-communication.png style="width:90%" align=right />
+
+<table width=100%>
+  <tr>
+    <td width=20%>Case 1</td>
+    <td width=50%>Команда без данных <br>Ответ без данных</td>
+    <td><img src=img2020/11-apdu-case-1.png style="height:40pt" align=left /></td>
+  </tr>
+  <tr>
+    <td width=10%>Case 2</td>
+    <td>Команда без данных <br>Ответ с данными</td>
+    <td><img src=img2020/11-apdu-case-2.png style="height:40pt" align=left /></td>
+  </tr>
+  <tr>
+    <td width=10%>Case 3</td>
+    <td>Команда с данными<br>Ответ без данных</td>
+    <td><img src=img2020/11-apdu-case-3.png style="height:40pt" align=left /></td>
+  </tr>
+  <tr>
+    <td width=10%>Case 4</td>
+    <td>Команда с данными<br>Ответ с данными</td>
+    <td><img src=img2020/11-apdu-case-4.png style="height:40pt" align=left /></td>
+  </tr>
+</table>
+
+### Response APDU Status Word
+
+<table width=100%>
+  <tr>
+    <td width=50%>
+      SUCCESS <br>
+      <b>90 00 </b><br>
+      <b>61 XX</b><br>
+      <br>
+      WRONG LE<br>
+      <b>6С XX </b>
+    </td>
+    <td width=50%>ERROR<br><b>64 XX -- 6F XX</b><br></td>
+</table>
+
+---
+
+# Функциональный интерфейс APDU
+
+<img src=img2020/15-apdu-functional.png style="width:100%" align=right />
+<br><br><br>
+
+
+<h4 style="margin: -0.9em 0;">Операции с файловой системой</h4>
+
+```
+"ACTIVATE FILE" "APPEND RECORD" "CHANGE REFERENCE DATA" "CREATE FILE" 
+"DEACTIVATE FILE" "DELETE FILE" "ERASE BINARY" "ERASE RECORD (S)" 
+"READ BINARY" "READ RECORD (S)" "SEARCH BINARY" "SEARCH RECORD" 
+"SELECT" "TERMINATE DF" "TERMINATE EF" "UPDATE BINARY" 
+"UPDATE RECORD" "WRITE BINARY" "WRITE RECORD"
+```
+
+<h4 style="margin: -0.9em 0;">Криптографические операции</h4>
+
+```
+"MANAGE SECURITY ENVIRONMENT" "GENERATE ASYMMETRIC KEY PAIR" 
+"PERFORM SECURITY OPERATION"
+```
+
+<h4 style="margin: -0.9em 0;">Управление аутентификацией</h4>
+
+```
+"EXTERNAL (/MUTUAL) AUTHENTICATE" "GENERAL AUTHENTICATE" 
+"GET CHALLENGE" "INTERNAL AUTHENTICATE" "VERIFY" "RESET RETRY COUNTER"
+```
+
+<h4 style="margin: -0.9em 0;">Управление картой</h4>
+
+```
+"GET DATA" "PUT DATA" "TERMINATE CARD USAGE"
+```
+
+<h4 style="margin: -0.9em 0;">Управление защищенным каналом</h4>
+```
+"ENVELOPE" "MANAGE CHANNEL"
+```
+
+<h4 style="margin: -0.9em 0;">Управление передачей данных</h4>
+```
+"GET RESPONSE"
+```
+
+---
+
+# PKCS#11
+
+<img src=img2020/16-pkcs11-objects.png style="width:60%" align=right border=1 />
+<img src=img2020/16-pkcs11-sessions.png style="width:60%" align=right border=1 />
+
+<h4 style="margin: -0.9em 0;">Управление сеансом взаимодействия</h4>
+```
+GetSlotList
+WaitForSlotEvent
+OpenSession/CloseSession
+Login/Logout
+```
+
+<h4 style="margin: -0.9em 0;">Криптографические операции</h4>
+```
+Encrypt/Decrypt
+Digest
+Sign/Verify
+GenerateKey
+GenerateKeyPair
+WrapKey/UnwrapKey
+DeriveKey
+SeedRandom
+GenerateRandom
+```
+
+<h4 style="margin: -0.9em 0;">Управление объектами</h4>
+```
+CreateObject/DestroyObject
+GetAttributeValue
+SetAttributeValue
+FindObjects
+```
+
+<h4 style="margin: -0.9em 0;">Управление токеном</h4>
+```
+GetTokenInfo
+InitToken
+InitPIN
+SetPIN
+```
+
+---
+
+# Программный стек Linux
+
+### Middleware
+
+```
+sudo apt-get install pcscd
+```
+
+* `pcscd` -- сервис "менеджер смарт-карт" 
+* `libpcsclite.so` -- реализация PCSC API
+
+### Проприетарное middleware
+
+```
+sudo dpkg -i ~/workshop/librtpkcs11ecp_*.deb
+file /usr/lib/librtpkcs11ecp.so
+```
+
+### Утилиты и инструменты
+
+```
+sudo apt-get install pcsc-tools
+
+* pcsc_scan
+* scriptor
+```
+
+
+```
+sudo apt-get install -t testing opensc
+
+* opensc-tool
+* opensc-explorer
+* pkcs11-tool
+* pkcs11-spy
+
+```
+
+---
+
+# Обнаружение смарт-карт
+
+### USB-устройство
+
+```
+lsusb
+```
+
+Идентификация
+
+* **VID** -- vendor id
+* **PID** -- product id
+
+### Смарт-карта
+
+```
+pcsc_scan
+```
+
+**Идентификация: ATR**
+
+<img src=img2020/17-atr.png style="width:60%" align=center>
+
+* Протокольная часть
+  * метод кодирования байта данных
+  * допустимая частота/скорость взаимодействия
+  * поддерживаемый транспортный протокол
+* Historical bytes -- идентификация модели
+
+
+
+---
+
+# Hands on APDU
+
+### Задача
+
+Создать файл с данными, доступный на чтение только при предъявлении пин-кода.
+
+--
+
+```
+00 A4 00 00 [SELECT FILE] 
+02 [PATH LEN] 
+3F 00 [PATH: 3F00]
+```
+```
+00 20 00 02 [VERIFY PIN ID: 02] 08 [PIN LEN] 
+31 32 33 34 35 36 37 38 [PIN VALUE]
+```
+```
+00 A4 08 00 [SELECT FILE BY PATH] 04 [PATH LEN] 
+10 00 10 04 [PATH: 1000/1004]
+```
+```
+00 E0 00 00 [CREATE FILE] 1F [PARAM LEN] 
+6F 1D [PARAMS of LEN: 26] 
+80 02 00 06 [FILE LENGTH: 6] 
+82 02 01 00 [FILE TYPE: elementary file]
+83 02 AA AA [FILE ID: AAAA]
+86 0F 43 02 02 00 00 00 00 00 00 00 00 00 00 00 00 [SECURITY PARAMS]
+```
+```
+00 A4 08 00 [SELECT FILE BY PATH] 06 [PATH LEN]  
+10 00 10 04 AA AA [PATH: 1000/1004/AAAA]
+```
+```
+00 D6 00 00 [WRITE BINARY BY OFFSET: 0x0000] 06 [DATA LENGTH] 
+73 65 63 72 65 74 [DATA]
+```
+
+---
+
+# Hands on APDU
+
+Выполним в scriptor (pkcs11-tools):
+```
+reset
+
+00 A4 00 00 02 3F 00
+00 C0 00 00 26
+00 20 00 02 08 31 32 33 34 35 36 37 38
+00 A4 08 00 04 10 00 10 04
+00 C0 00 00 26
+
+00 E0 00 00 1F 6F 1D 80 02 00 06 82 02 01 00 83 02 AA AA \
+86 0F 43 02 02 00 00 00 00 00 00 00 00 00 00 00 00
+
+00 A4 08 00 06 10 00 10 04 AA AA
+00 C0 00 00 26
+00 D6 00 00 06 73 65 63 72 65 74
+
+reset
+```
+
+Проверим в opensc-explorer:
+
+```
+cd 1000
+cd 1004
+cat AAAA
+```
+--
+```
+verify CHV2 3132333435363738
+cat AAAA
+```
+
+---
+
+# Hands on PKCS#11
+
+### Задача
+
+Создать объект данных, доступный на чтение только при предъявлении пин-кода.
+
+--
+
+```
+echo 'TOP-TOP SECRET' > secret.txt
+
+pkcs11-tool --module /usr/lib/librtpkcs11ecp.so \
+--write-object secret.txt --type data --private --label 'secret' \
+--login --pin 12345678
+```
+--
+
+Проверим доступ без пин-кода:
+
+```
+pkcs11-tool --module /usr/lib/librtpkcs11ecp.so --read-object \
+--type data --label 'secret'
+```
+
+--
+
+Проверим доступ с пин-кодом:
+
+```
+pkcs11-tool --module /usr/lib/librtpkcs11ecp.so --read-object \
+--type data --label 'secret' --login --pin 12345678
+```
+
+---
+
+# В помощь исследователю
+
+### Получаем логи APDU-команд:
+
+```
+sudo killall pcscd
+sudo pcscd -a
+```
+
+```
+# another terminal
+tail -f /var/log/messages
+```
+
+### Получаем логи взаимодействия с PKCS#11-библиотекой
+
+```
+export PKCS11SPY=/usr/lib/librtpkcs11ecp.so
+export PKCS11SPY_OUTPUT=/home/debian/pkcs11.log
+
+pkcs11-tool --module /usr/lib/x86_64-linux-gnu/pkcs11-spy.so ...
+```
+
+```
+# another terminal
+tail -f /home/debian/pkcs11.log
+```
+
+<img src=img2020/18-pkcs11-spy.png style="width:100%" align=center>
+
+---
+
+# Решения индустрии
+
+<img src=img2020/19-industry.png style="width:90%" align=right>
+
+---
+
+# Выпуск сертификата
+
+<img src=img2020/21-issue-certificate.png style="width:70%" align=right>
+
+### ПО УЦ
+
+* КриптоПро
+* Notary-PRO (Сигнал-Ком)
+* ViPNet (Инфотекс)
+
+### Утилиты
+
+```
+pkcs11-tool
+openssl req ...
+openssl x509 ...
+openssl ca ...
+```
+
+### Тестовая площадка https://ra.rutoken.ru/
+
+```
+sudo dpkg -i ~/workshop/libnpRutoken*.deb
+
+sudo killall firefox
+x-www-browser&
+```
+
+---
+
+# Аутентификация в Linux -- PAM
+
+<img src=img2020/10-pam.png style="width:50%" align=right />
+### Сервисы
+
+* `auth` аутентификация
+* `account` установка ограничений аккаунта
+* `session` обработка начала/завершения сеанса работы
+* `passwd` контроль смены аутентификатора
+
+### Режимы использования модуля в цепочке
+
+<img src=img2020/10-pam-modes2.png style="width:100%" align=right />
+
+---
+
+# pam_p11
+
+`sudo apt-get install -t testing libpam-p11`
+
+<img src=img2020/20-pam-p11-algo.png style="width:90%" align=right />
+
+---
+
+# pam_p11
+
+### /usr/share/pam-configs/p11
+
+```
+Name: Pam_p11
+Default: yes
+Priority: 800
+Auth-Type: Primary
+Auth: sufficient pam_p11.so /usr/lib/librtpkcs11ecp.so
+```
+
+### Считаем сертификат доверенным для аутентификации 
+```
+mkdir ~/.eid
+chmod 0755 ~/.eid
+cat ~/Downloads/Letoctf.pem >> ~/.eid/authorized_certificates
+chmod 0644 ~/.eid/authorized_certificates
+```
+
+### Обновляем конфигурацию PAM-аутентификации
+
+Можно отключить аутентификацию по паролю
+
+```
+sudo pam-auth-update
+```
+
+### Проверяем!
+
+```
+xdg-screensaver lock
+```
+
+---
+
+# Аутентификация в ssh
+
+<img src=img2020/23-ssh-auth.png style="width:90%" align=right />
+
+---
+
+# Входим с токеном по ssh
+
+### Добавляем публичный ключ в доверенные
+
+```
+mkdir -p ~/.ssh
+chmod 0755 ~/.ssh
+ssh-keygen -D /usr/lib/librtpkcs11ecp.so >> ~/.ssh/authorized_keys
+chmod 0644 ~/.ssh/authorized_keys
+```
+
+### Проверяем!
+
+```
+ssh -I /usr/lib/librtpkcs11ecp.so debian@127.0.0.1
+```
+
+<br/>
+
+### pam_p11 использует ~/.ssh/authorized_keys
+
+```
+rm -r ~/.eid
+```
+
+### Проверяем!
+
+```
+xdg-screensaver lock
+```
+
+---
+
+# Настраиваем аутентификацию пользователя HTTPS-сайта
+
+### Исходные данные
+
+* Web-приложение на порте `1337`
+* Nginx проксирует обращение к порту 80 хоста test.local на 127.0.0.1:1337
+
+### Задача
+
+* Сделать web-приложение доступным только для аутентифицированного пользователя по HTTPS, отдавать сайту идентификатор пользователя в HTTP-заголовке
+*  Nginx аутентифицирует пользователя и проксирует обращение к порту 143 хоста test.local на 127.0.0.1:1337
+
+<img src=img2020/22-nginx.png style="width:100%" align=right />
+
+---
+
+# Настраиваем аутентификацию пользователя HTTPS-сайта
+
+### Web-приложение `webapp.py`
+
+```
+#!/usr/bin/python3
+
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
+class RequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        message = "Hello! You are unauthorized!"
+        if "X-SSL-CERT" in self.headers:
+          message = "Hi, cert owner: " + self.headers["X-SSL-CERT"]
+
+        self.protocol_version = "HTTP/1.1"
+        self.send_response(200)
+        self.send_header("Content-Length", len(message))
+        self.end_headers()
+
+        self.wfile.write(bytes(message, "utf8"))
+        return
+
+def run():
+    server = ('', 1337)
+    httpd = HTTPServer(server, RequestHandler)
+    httpd.serve_forever()
+run()
+```
+
+---
+
+# Настраиваем аутентификацию пользователя HTTPS-сайта
+
+### Nginx
+
+* Конфиг в `/etc/nginx/sites-availible/test.local.nginx.conf`
+* Симлинк `/etc/nginx/sites-enabled/test.local.nginx.conf`
+
+```
+server {
+  server_name test.local;
+  listen 80;
+  listen [::]:80;
+
+  location / {
+    proxy_pass http://127.0.0.1:1337;
+  }
+}
+```
+
+* Исправлен `/etc/hosts`, чтобы обращаться на сайт по имени
+
+```
+127.0.0.1 test.local
+```
+
+* Доступ к порту 1337 будет извне ограничен iptables.
+
+```
+iptables -I INPUT -p tcp –-dport 1337 -j REJECT
+```
+
+Проверим: `wget -q -O - http://test.local/`
+
+---
+
+# Подготавливаем ключи и сертификаты
+
+* Делаем "УЦ-на-коленке": ключ и самоподписанный сертификат УЦ
+
+```
+mkdir -p ca && pushd ca
+
+echo -n 'secret' > passphrase_file
+
+openssl req -new -x509 -extensions v3_ca -subj '/CN=TEST CA/' \
+-keyout ca.key.pem -out ca.cert.pem -passout file:passphrase_file
+
+popd
+```
+
+* Выпускаем для сайта сертификат: ключ и сертификат, подписанный УЦ
+
+```
+mkdir -p site && pushd site
+
+echo -n 'site_secret' > passphrase_file
+
+openssl req -new -subj '/CN=test.local/' -keyout test.local.key.pem \
+-passout file:passphrase_file -out test.local.req.pem
+
+openssl x509 -req -in test.local.req.pem -CA ../ca/ca.cert.pem \
+-CAkey ../ca/ca.key.pem -passin file:../ca/passphrase_file \
+-CAcreateserial -days 500 -sha256 -out test.local.cert.pem
+
+popd
+```
+
+---
+
+# Настраиваем односторонний TLS
+
+* Правим `test.local.nginx.conf`
+см. [ngx_http_ssl_module](https://nginx.org/ru/docs/http/ngx_http_ssl_module.html)
+
+```
+server {
+  ...
+  listen 443 ssl;
+  ssl_certificate /home/debian/workshop/tls/site/test.local.cert.pem;
+  ssl_certificate_key /home/debian/workshop/tls/site/test.local.key.pem;
+  ssl_password_file /home/debian/workshop/tls/site/passphrase_file;
+  ...
+}
+```
+
+* Перезапускаем nginx:
+
+```
+sudo service nginx restart
+``` 
+
+### Проверяем! [https://test.local/]
+
+```
+wget -q -O - --ca-certificate=ca/ca.cert.pem https://test.local/
+```
+
+---
+
+# Настраиваем двусторонний TLS
+
+* Правим `test.local.nginx.conf`
+см. [ngx_http_ssl_module](https://nginx.org/ru/docs/http/ngx_http_ssl_module.html)
+
+* Доверяем сертификатам, выпущенным нашим "УЦ-на-коленке"
+* Добавляем в HTTP заголовок `X-SSL-CERT` с сертификатом
+
+```
+server {
+  ...
+  ssl_client_certificate /home/debian/workshop/tls/ca/ca.cert.pem;
+  ssl_verify_client on;
+  ...
+
+  location / {
+    ...
+    proxy_set_header X-SSL-CERT $ssl_client_escaped_cert;
+  }
+}
+```
+
+* Перезапускаем nginx:
+
+```
+sudo service nginx restart
+``` 
+
+### Проверяем! [https://test.local/]
+
+```
+wget --ca-certificate=ca/ca.cert.pem https://test.local/
+```
+
+---
+
+# Выдаем клиентский сертификат
+
+### Программный ключ [для тестирования]
+
+```
+mkdir -p sw_client && pushd sw_client
+
+echo -n 'client_secret' > passphrase_file
+
+openssl req -new -subj '/CN=SW client/' -keyout sw_client.key.pem \
+-passout file:passphrase_file -out sw_client.req.pem
+
+openssl x509 -req -in sw_client.req.pem -CA ../ca/ca.cert.pem \
+-CAkey ../ca/ca.key.pem -passin file:../ca/passphrase_file \
+-CAcreateserial -days 500 -sha256 -out sw_client.cert.pem
+
+popd
+```
+* Сделаем расшифрованный ключ (wget не умеет запрашивать пароль от PKCS#8)
+
+```
+openssl pkcs8 -in sw_client/sw_client.key.pem \
+  -out sw_client/sw_client.key.raw.pem
+```
+
+### Проверяем! [https://test.local/]
+
+```
+wget --ca-certificate=ca/ca.cert.pem \
+  --certificate=sw_client/sw_client.cert.pem \
+  --private-key=sw_client/sw_client.key.raw.pem https://test.local/
+```
+
+---
+
+# Выдаем клиентский сертификат на токен
+
+* Генерируем запрос на https://ra.rutoken.ru/
+* Выпускаем сертификат
+
+```
+openssl x509 -req -in ~/Downloads/request*.p10 -CA ./ca/ca.cert.pem \
+-CAkey ./ca/ca.key.pem -passin file:./ca/passphrase_file \
+-CAcreateserial -days 500 -sha256 -out hw_client.cert.pem
+```
+* Импортируем сертификат на токен на https://ra.rutoken.ru/
+
+
+### Настраиваем Firefox
+
+* `about:preferences#privacy` > `Security Devices`
+* Load
+  * Module name: `Rutoken PKCS#11`
+  * Module filename: `/usr/lib/librtpkcs11ecp.so`
+* Перезапускаем Firefox
+
+### Проверяем! [https://test.local/]
+
+---
+
+class: center, middle
+
+### Спасибо за внимание!
+
+<img src=img2020/aktiv.png style="width:20%" align="center" />
+
+##### mironenko@rutoken.ru
+
+##### Мы <a href="https://www.rutoken.ru/company/vacancy/">нанимаем</a>
+##### job@rutoken.ru
+
+    </textarea>
+    <script src="out/remark.js" type="text/javascript"></script>
+    <script type="text/javascript">
+    remark.macros.scale = function (percentage) {
+          var url = this;
+          return '<img src="' + url + '" style="width: ' + percentage + '" />';
+        };
+      var slideshow = remark.create({countIncrementalSlides: false});
+    </script>
+  </body>
+</html>

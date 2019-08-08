@@ -1,0 +1,3 @@
+cd 1000
+cd 1004
+cat AAAA

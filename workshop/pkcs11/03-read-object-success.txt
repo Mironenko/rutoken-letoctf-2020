@@ -1,0 +1,1 @@
+pkcs11-tool --module /usr/lib/librtpkcs11ecp.so --read-object --type data --label 'secret' --login --pin 12345678
