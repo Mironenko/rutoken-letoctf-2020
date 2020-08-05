@@ -5,7 +5,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 class RequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         message = "Hello! You are unauthorized!"
-        if "X-SSL_CERT" in self.headers:
+        if "X-SSL-CERT" in self.headers:
           message = "Hi, cert owner!\n" + self.headers["X-SSL_CERT"]
 
         self.protocol_version = "HTTP/1.1"
