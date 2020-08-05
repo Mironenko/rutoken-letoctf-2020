@@ -1,3 +1,7 @@
+# Презентация http://mironenko.github.io/rutoken-letoctf-2020
+
+# VM: 
+
 # Начало работы
 
 1. Скачать образ гостевой машины.
